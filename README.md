@@ -5,9 +5,3 @@
 
 ## Requirements
 see [requirements.txt](requirements.txt)
-
-
-## Maintainer
-| Name      | Email                                           | Organization                                                 |
-| --------- | ----------------------------------------------- | ------------------------------------------------------------ |
-| Hui Chong | chonghui@hust.edu.cn<br />huichong.me@gmail.com | Research Assistant, School of Life Science and Technology, Huazhong University of Science & Technology |
