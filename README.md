@@ -9,4 +9,5 @@ Please see [requirements.txt](requirements.txt)
 
 ## Models
 Weighted Array Model, Bayesian network, and Support vector machine.
+
 See [Source](Source) for details in implementation.
