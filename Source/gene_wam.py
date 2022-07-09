@@ -14,8 +14,10 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 from sklearn import metrics
 from signals_processing import load_signals
+from utils import *
 
 
 class WAM:
@@ -96,7 +98,7 @@ class WAM:
         生成权重矩阵的行名
         """
         position = list(map(str, list(range(-self.signal_ulen, 0)) + list(range(1, self.signal_dlen + 1))))
-        adj_pos = [f"({position[i-1]},{position[i]})" for i in range(1, len(position))]
+        adj_pos = [f"({position[i - 1]},{position[i]})" for i in range(1, len(position))]
 
         return position if arr_dim == 1 else adj_pos
 
@@ -159,9 +161,10 @@ class WAM:
                                         "positive_weight_array.png",
                                         "negative_weight_array.png"
                                         ]):
-            sns.heatmap(weight_df, cmap="viridis")
-            plt.savefig(self.model_dir + fig_name, dpi=400, bbox_inches='tight')
-            plt.show()
+            fig, ax = plt.subplots()
+            sns.heatmap(weight_df, cmap="viridis", ax=ax)
+            fig.savefig(self.model_dir + fig_name, dpi=400, bbox_inches='tight')
+            plt.close()
 
     def predict_scores(self, signals, model_type="wam"):
         """
@@ -200,116 +203,163 @@ class WAM:
         return _labels
 
 
-def plot_roc(fpr, tpr, roc_auc, legend, title):
-    plt.plot([0, 1], [0, 1], 'k--', linewidth=1)
-    plt.plot(fpr, tpr, 'b-', label=f"{legend}(AUC={roc_auc:.3f})", linewidth=1)
-    plt.legend(loc="best")
-    plt.xlabel("FPR")
-    plt.ylabel("TPR")
-    plt.title(f"{title} ROC Curve")
-
-
-def plot_pr(recall, precision, pr_auc, legend, title):
-    plt.plot([0, 1], [1, 0], 'k--', linewidth=1)
-    plt.plot(recall, precision, 'b-', label=f"{legend}(AUC={pr_auc:.3f})", linewidth=1)
-    plt.legend(loc="best")
-    plt.xlabel("Recall")
-    plt.ylabel("Precision")
-    plt.title(f"{title} PR Curve")
-
-
 if __name__ == "__main__":
 
     start = datetime.datetime.now()
+    # site_type = "donor"
+    site_type = "acceptor"
 
-    """*********************************************准备*********************************************"""
-    signals_folder = "u3d6_u12d5"
+    """*****************************************基于多种信号长度的wam模型的对比******************************************"""
+    # styles = ['b-', 'r:', 'm--', 'g-.', 'y-', 'c-']
+    # # 设置画布
+    # fig1, ax1 = plt.subplots()
+    # ax1.plot([0, 1], [0, 1], 'k--', linewidth=1)
+    # ax1.set_xlabel("FPR")
+    # ax1.set_ylabel("TPR")
+    # ax1.set_title(f"WAM ROC Curve")
+    # axins1 = ax1.inset_axes([0.3, 0.3, 0.3, 0.3])
+    # fig2, ax2 = plt.subplots()
+    # ax2.plot([0, 1], [1, 0], 'k--', linewidth=1)
+    # ax2.set_xlabel("Recall")
+    # ax2.set_ylabel("Precision")
+    # ax2.set_title(f"WAM PR Curve")
+    #
+    # fig_dir = f"../Figures/WAM/{site_type}/"
+    #
+    # signals_folders = ["u3d6_u15d2", "u3d9_u15d4", "u6d9_u20d4", "u6d12_u20d6", "u9d12_u25d6", "u9d15_u25d9"]
+    # for signals_folder, style in zip(signals_folders, styles):
+    #     dulen, ddlen, aulen, adlen = [int(num) for num in re.findall("\d+", signals_folder)]
+    #
+    #     feat_dir = f"../Data_files/feature_data/{signals_folder}/"
+    #     model_dir = f"../Models/WAM/{site_type}/{signals_folder}/"
+    #     for path in [fig_dir, model_dir]:
+    #         if not os.path.exists(path):
+    #             os.makedirs(path)
+    #
+    #     # 加载数据集
+    #     pos_signals_training, neg_signals_training = load_signals(feat_dir, site_type, "training")
+    #     pos_signals_testing, neg_signals_testing = load_signals(feat_dir, site_type, "testing")
+    #     # 设置测试集
+    #     signals_testing = pos_signals_testing + neg_signals_testing
+    #     labels_testing = make_labels(pos_signals_testing, neg_signals_testing)
+    #
+    #     # 剪接位点识别器
+    #     if site_type == "donor":
+    #         splice_clf = WAM(dulen, ddlen, model_dir)
+    #     else:
+    #         splice_clf = WAM(aulen, adlen, model_dir)
+    #     # 训练模型
+    #     splice_clf.fit(pos_signals_training, neg_signals_training)
+    #     # 模型预测及评估
+    #     scores_testing = splice_clf.predict_scores(signals_testing)
+    #     fpr, tpr, thr = metrics.roc_curve(labels_testing, scores_testing)
+    #     precision, recall, thresholds = metrics.precision_recall_curve(labels_testing, scores_testing)
+    #
+    #     if site_type == "donor":
+    #         signal_size = f"Signal=[{-dulen}, {ddlen}]"
+    #     else:
+    #         signal_size = f"Signal=[{-aulen}, {adlen}]"
+    #
+    #     # 绘制ROC曲线
+    #     ax1.plot(fpr, tpr, style,
+    #              label=f"{signal_size} (AUC={metrics.auc(fpr, tpr):.3f})",
+    #              linewidth=0.8)
+    #     axins1.plot(fpr, tpr, style)
+    #     # 绘制PR曲线
+    #     ax2.plot(recall, precision, style,
+    #              label=f"{signal_size} (AUC={metrics.auc(recall, precision):.3f})",
+    #              linewidth=0.8)
+    #
+    # axins1.set_xlim(0, 0.15)
+    # axins1.set_ylim(0.85, 1.0)
+    # mark_inset(ax1, axins1, loc1=3, loc2=1)
+    # ax1.legend(loc="best", fontsize="x-small")
+    # ax2.legend(loc="best", fontsize="x-small")
+    # fig1.savefig(fig_dir + f"tpr-fpr.png", dpi=400, bbox_inches='tight')
+    # fig2.savefig(fig_dir + f"precision-recall.png", dpi=400, bbox_inches='tight')
+    # # plt.show()
+
+    """*********************************************wmm和wam模型的对比测试*********************************************"""
+    signals_folder = "u3d6_u15d2"
+    # signals_folder = "u3d9_u15d4"
+    # signals_folder = "u6d9_u20d4"
+    # signals_folder = "u6d12_u20d6"
+    # signals_folder = "u9d12_u25d6"
+    # signals_folder = "u9d15_u25d9"
     dulen, ddlen, aulen, adlen = [int(num) for num in re.findall("\d+", signals_folder)]
-    
+
     feat_dir = f"../Data_files/feature_data/{signals_folder}/"
-    fig_dir = f"../Figures/WAM/{signals_folder}/"
-    model_dir = f"../Models/WAM/{signals_folder}/"
+    fig_dir = f"../Figures/WAM/{site_type}/{signals_folder}/"
+    model_dir = f"../Models/WAM/{site_type}/{signals_folder}/"
     for path in [fig_dir, model_dir]:
         if not os.path.exists(path):
             os.makedirs(path)
 
     # 加载数据集
-    donor_signals_training, bd_signals_training = load_signals(feat_dir, "donor", "training")
-    donor_signals_testing, bd_signals_testing = load_signals(feat_dir, "donor", "testing")
+    pos_signals_training, neg_signals_training = load_signals(feat_dir, site_type, "training")
+    pos_signals_testing, neg_signals_testing = load_signals(feat_dir, site_type, "testing")
+    # 设置测试集
+    signals_testing = pos_signals_testing + neg_signals_testing
+    labels_testing = make_labels(pos_signals_testing, neg_signals_testing)
 
-    # 测试集信号
-    signals_testing = donor_signals_testing + bd_signals_testing
-    # 测试集标签
-    donor_labels_testing = [1 for _ in range(len(donor_signals_testing))]
-    bd_labels_testing = [0 for _ in range(len(bd_signals_testing))]
-    labels_testing = donor_labels_testing + bd_labels_testing
-    """*********************************************模型训练测试*********************************************"""
-    # donor位点识别器
-    donor_clf = WAM(dulen, ddlen, model_dir)
+    # 剪接位点识别器
+    if site_type == "donor":
+        splice_clf = WAM(dulen, ddlen, model_dir)
+    else:
+        splice_clf = WAM(aulen, adlen, model_dir)
     # # 训练模型
-    # donor_clf.fit(donor_signals_training, bd_signals_training)
-
+    splice_clf.fit(pos_signals_training, neg_signals_training)
     # 加载模型
-    donor_clf.load_params()
+    # splice_clf.load_params()
 
-    donor_scores_wmm = donor_clf.predict_scores(donor_signals_training, "wmm")
-    donor_scores_wam = donor_clf.predict_scores(donor_signals_training, "wam")
-
-    ratio = [i / len(donor_scores_wmm) for i in range(len(donor_scores_wmm))]
+    wmm_scores_training = splice_clf.predict_scores(pos_signals_training, "wmm")
+    wam_scores_training = splice_clf.predict_scores(pos_signals_training, "wam")
+    # 绘制训练打分分布图
+    ratio = [i / len(wmm_scores_training) for i in range(len(wmm_scores_training))]
     plt.figure(figsize=(9, 6))
-    plt.plot(ratio, sorted(donor_scores_wmm), 'b-', linewidth=1)
-    plt.plot(ratio, sorted(donor_scores_wam), 'r', linewidth=1)
+    plt.plot(ratio, sorted(wmm_scores_training), 'b-', linewidth=1)
+    plt.plot(ratio, sorted(wam_scores_training), 'r', linewidth=1)
     plt.grid()
     plt.legend(["WMM score", "WAM score"], loc='best')
     plt.xticks(np.arange(0.0, 1.1, step=0.1))
     plt.xlabel("site ratio")
-    plt.ylabel("donor score")
-    plt.title("Donor score distribution")
-    plt.savefig(fig_dir + "donor scores.png", dpi=400, bbox_inches='tight')
+    plt.ylabel("score")
+    plt.title("Training scores distribution")
+    plt.savefig(fig_dir + "training scores scores.png", dpi=400, bbox_inches='tight')
     plt.show()
 
-    """*********************************************模型测试*********************************************"""
-    scores_wmm = donor_clf.predict_scores(signals_testing, "wmm")
-    scores_wam = donor_clf.predict_scores(signals_testing, "wam")
+    wmm_scores_testing = splice_clf.predict_scores(signals_testing, "wmm")
+    wam_scores_testing = splice_clf.predict_scores(signals_testing, "wam")
 
     # 绘制TPR-FPR的ROC图
-    fpr_wmm, tpr_wmm, thr_wmm = metrics.roc_curve(labels_testing, scores_wmm)
-    fpr_wam, tpr_wam, thr_wam = metrics.roc_curve(labels_testing, scores_wam)
-    auc_wmm = metrics.auc(fpr_wmm, tpr_wmm)
-    auc_wam = metrics.auc(fpr_wam, tpr_wam)
+    wmm_fpr, wmm_tpr, wmm_thres = metrics.roc_curve(labels_testing, wmm_scores_testing)
+    wam_fpr, wam_tpr, wam_thres = metrics.roc_curve(labels_testing, wam_scores_testing)
+    wmm_auc = metrics.auc(wmm_fpr, wmm_tpr)
+    wam_auc = metrics.auc(wam_fpr, wam_tpr)
     plt.figure(figsize=(10, 5))
     plt.subplot(1, 2, 1)
-    plot_roc(fpr_wmm, tpr_wmm, auc_wmm, "WMM", "WMM")
+    plot_roc(wmm_fpr, wmm_tpr, wmm_auc, "WMM", "WMM")
     plt.subplot(1, 2, 2)
-    plot_roc(fpr_wam, tpr_wam, auc_wam, "WAM", "WAM")
+    plot_roc(wam_fpr, wam_tpr, wam_auc, "WAM", "WAM")
     plt.savefig(fig_dir + "tpr-fpr.png", dpi=400, bbox_inches="tight")
     plt.show()
 
     # 绘制Precision-Recall的PR图
-    precision_wmm, recall_wmm, thresholds_wmm = metrics.precision_recall_curve(labels_testing, scores_wmm)
-    precision_wam, recall_wam, thresholds_wam = metrics.precision_recall_curve(labels_testing, scores_wam)
-    auc_wmm = metrics.auc(recall_wmm, precision_wmm)
-    auc_wam = metrics.auc(recall_wam, precision_wam)
+    wmm_precision, wmm_recall_, wmm_thrs = metrics.precision_recall_curve(labels_testing, wmm_scores_testing)
+    wam_precision, wam_recall, wam_thrs = metrics.precision_recall_curve(labels_testing, wam_scores_testing)
+    wmm_auc = metrics.auc(wmm_recall_, wmm_precision)
+    wam_auc = metrics.auc(wam_recall, wam_precision)
     plt.figure(figsize=(10, 5))
     plt.subplot(1, 2, 1)
-    plot_pr(recall_wmm, precision_wmm, auc_wmm, "WMM", "WMM")
+    plot_pr(wmm_recall_, wmm_precision, wmm_auc, "WMM", "WMM")
     plt.subplot(1, 2, 2)
-    plot_pr(recall_wam, precision_wam, auc_wam, "WAM", "WAM")
+    plot_pr(wam_recall, wam_precision, wam_auc, "WAM", "WAM")
     plt.savefig(fig_dir + "precision-recall.png", dpi=400, bbox_inches='tight')
     plt.show()
 
-    # 计算f1-score最大的阈值
-    max_f1score = 0
-    ulti_thr = 0.5
-    thrs = np.arange(min(thresholds_wam), max(thresholds_wam), 0.05)
-    for thr in thrs:
-        labels_pred = np.zeros(len(signals_testing), dtype=int)
-        labels_pred[scores_wam >= thr] = 1
-        f1score = metrics.f1_score(labels_testing, labels_pred)
-        if f1score > max_f1score:
-            max_f1score = f1score
-            ulti_thr = thr
-    print(max_f1score, ulti_thr)
+    # 对于wam模型，计算最大f1-score对应的阈值
+    scores_testing = splice_clf.predict_scores(signals_testing)
+    find_thr(labels_testing, scores_testing)
 
     end = datetime.datetime.now()
     print(f"程序运行时间： {end - start}")

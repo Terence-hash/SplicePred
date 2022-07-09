@@ -151,7 +151,8 @@ if __name__ == '__main__':
     training_path = "../Data_files/raw_data/Training set/"
     testing_path = "../Data_files/raw_data/Testing set/"
     # 提取核苷酸序列信号
-    for donor_ulen, donor_dlen, acceptor_ulen, acceptor_dlen in ([6, 9, 15, 6], [9, 12, 20, 9], [9, 15, 27, 9]):
+    for donor_ulen, donor_dlen, acceptor_ulen, acceptor_dlen in ([3, 6, 15, 2], [3, 9, 15, 4], [6, 9, 20, 4],
+                                                                 [6, 12, 20, 6], [9, 12, 25, 6], [9, 15, 25, 9]):
         extract_signals(training_path, donor_ulen, donor_dlen, acceptor_ulen, acceptor_dlen)
         extract_signals(testing_path, donor_ulen, donor_dlen, acceptor_ulen, acceptor_dlen)
 

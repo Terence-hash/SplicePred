@@ -23,6 +23,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset, \
     inset_axes, zoomed_inset_axes
 from signals_processing import load_signals
+from utils import *
 
 
 class SVM:
@@ -296,10 +297,12 @@ if __name__ == "__main__":
     start = datetime.datetime.now()
 
     """*********************************************数据准备*********************************************"""
-    signals_folder = "u3d6_u12d5"
-    # signals_folder = "u6d9_u15d6"
-    # signals_folder = "u9d12_u20d9"
-    # signals_folder = "u9d15_u27d9"
+    # signals_folder = "u3d6_u15d2"
+    # signals_folder = "u3d9_u15d4"
+    # signals_folder = "u6d9_u20d4"
+    # signals_folder = "u6d12_u20d6"
+    # signals_folder = "u9d12_u25d6"
+    signals_folder = "u9d15_u25d9"
 
     dulen, ddlen, aulen, adlen = [int(num) for num in re.findall("\d+", signals_folder)]
 
