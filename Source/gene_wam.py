@@ -6,6 +6,7 @@
 # @Software: PyCharm
 
 import os
+import re
 import datetime
 import random
 from functools import reduce
@@ -14,7 +15,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn import metrics
-from signals import load_signals
+from signals_processing import load_signals
 
 
 class WAM:
@@ -50,7 +51,7 @@ class WAM:
         self._plot_weights()
 
         # save wmm and wam weights
-        self._save_weights()
+        self._save_params()
 
     def _compute_weights(self, signals, psuedo_count=1e-6):
         """
@@ -120,7 +121,7 @@ class WAM:
                                 columns=self._base_arrays(2)
                                 )
 
-    def _save_weights(self):
+    def _save_params(self):
         """
         保存模型权重
         """
@@ -135,7 +136,7 @@ class WAM:
                  negative_weight_array=self.negative_weight_array
                  )
 
-    def load_weights(self):
+    def load_params(self):
         """
         从文件中加载模型权重
         """
@@ -162,7 +163,7 @@ class WAM:
             plt.savefig(self.model_dir + fig_name, dpi=400, bbox_inches='tight')
             plt.show()
 
-    def predict_scores(self, signals, model_type):
+    def predict_scores(self, signals, model_type="wam"):
         """
         使用模型进行打分预测
         """
@@ -185,14 +186,14 @@ class WAM:
                              - np.log(self.negative_weight_array[i - 1, bx, by])
             _scores.append(score)
 
-        return _scores
+        return np.array(_scores)
 
-    def predict(self, signals, threshold, model_type):
+    def predict(self, signals, threshold, model_type="wam"):
         """
         使用模型进行分类预测
         """
         _scores = self.predict_scores(signals, model_type)
-        _labels = np.zeros(len(signals), dtype=np.int)
+        _labels = np.zeros(len(signals), dtype=int)
         isGreater = _scores >= threshold
         _labels[isGreater] = 1
 
@@ -222,9 +223,9 @@ if __name__ == "__main__":
     start = datetime.datetime.now()
 
     """*********************************************准备*********************************************"""
-    up_len, down_len = 3, 6
-
     signals_folder = "u3d6_u12d5"
+    dulen, ddlen, aulen, adlen = [int(num) for num in re.findall("\d+", signals_folder)]
+    
     feat_dir = f"../Data_files/feature_data/{signals_folder}/"
     fig_dir = f"../Figures/WAM/{signals_folder}/"
     model_dir = f"../Models/WAM/{signals_folder}/"
@@ -236,14 +237,20 @@ if __name__ == "__main__":
     donor_signals_training, bd_signals_training = load_signals(feat_dir, "donor", "training")
     donor_signals_testing, bd_signals_testing = load_signals(feat_dir, "donor", "testing")
 
+    # 测试集信号
+    signals_testing = donor_signals_testing + bd_signals_testing
+    # 测试集标签
+    donor_labels_testing = [1 for _ in range(len(donor_signals_testing))]
+    bd_labels_testing = [0 for _ in range(len(bd_signals_testing))]
+    labels_testing = donor_labels_testing + bd_labels_testing
     """*********************************************模型训练测试*********************************************"""
     # donor位点识别器
-    donor_clf = WAM(up_len, down_len, model_dir)
+    donor_clf = WAM(dulen, ddlen, model_dir)
     # # 训练模型
-    donor_clf.fit(donor_signals_training, bd_signals_training)
+    # donor_clf.fit(donor_signals_training, bd_signals_training)
 
     # 加载模型
-    # donor_clf.load_weights()
+    donor_clf.load_params()
 
     donor_scores_wmm = donor_clf.predict_scores(donor_signals_training, "wmm")
     donor_scores_wam = donor_clf.predict_scores(donor_signals_training, "wam")
@@ -262,16 +269,8 @@ if __name__ == "__main__":
     plt.show()
 
     """*********************************************模型测试*********************************************"""
-
-    # 测试集信号
-    signals_testing = donor_signals_testing + bd_signals_testing
     scores_wmm = donor_clf.predict_scores(signals_testing, "wmm")
     scores_wam = donor_clf.predict_scores(signals_testing, "wam")
-
-    # 测试集标签
-    donor_labels_testing = [1 for _ in range(len(donor_signals_testing))]
-    bd_labels_testing = [0 for _ in range(len(bd_signals_testing))]
-    labels_testing = donor_labels_testing + bd_labels_testing
 
     # 绘制TPR-FPR的ROC图
     fpr_wmm, tpr_wmm, thr_wmm = metrics.roc_curve(labels_testing, scores_wmm)
@@ -298,6 +297,19 @@ if __name__ == "__main__":
     plot_pr(recall_wam, precision_wam, auc_wam, "WAM", "WAM")
     plt.savefig(fig_dir + "precision-recall.png", dpi=400, bbox_inches='tight')
     plt.show()
+
+    # 计算f1-score最大的阈值
+    max_f1score = 0
+    ulti_thr = 0.5
+    thrs = np.arange(min(thresholds_wam), max(thresholds_wam), 0.05)
+    for thr in thrs:
+        labels_pred = np.zeros(len(signals_testing), dtype=int)
+        labels_pred[scores_wam >= thr] = 1
+        f1score = metrics.f1_score(labels_testing, labels_pred)
+        if f1score > max_f1score:
+            max_f1score = f1score
+            ulti_thr = thr
+    print(max_f1score, ulti_thr)
 
     end = datetime.datetime.now()
     print(f"程序运行时间： {end - start}")

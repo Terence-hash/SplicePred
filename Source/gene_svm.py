@@ -6,6 +6,7 @@
 # @Software: PyCharm
 
 import os
+import re
 import sys
 import datetime
 import joblib
@@ -21,12 +22,12 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset, \
     inset_axes, zoomed_inset_axes
-from signals import load_signals
+from signals_processing import load_signals
 
 
 class SVM:
 
-    def __init__(self, signal_ulen, signal_dlen, model_par_dir, encoder_type):
+    def __init__(self, signal_ulen, signal_dlen, model_par_dir, encoder_type="sparse"):
         self.bases = {'a': 0, 'c': 1, 'g': 2, 't': 3}
         self.signal_ulen = signal_ulen
         self.signal_dlen = signal_dlen
@@ -294,10 +295,14 @@ class SVM:
 if __name__ == "__main__":
     start = datetime.datetime.now()
 
-    """*********************************************准备*********************************************"""
-    up_len, down_len = 3, 6
-
+    """*********************************************数据准备*********************************************"""
     signals_folder = "u3d6_u12d5"
+    # signals_folder = "u6d9_u15d6"
+    # signals_folder = "u9d12_u20d9"
+    # signals_folder = "u9d15_u27d9"
+
+    dulen, ddlen, aulen, adlen = [int(num) for num in re.findall("\d+", signals_folder)]
+
     feat_dir = f"../Data_files/feature_data/{signals_folder}/"
     fig_par_dir = f"../Figures/SVM/{signals_folder}/"
     model_par_dir = f"../Models/SVM/{signals_folder}/"
@@ -314,82 +319,119 @@ if __name__ == "__main__":
     donor_signals_training, bd_signals_training = load_signals(feat_dir, "donor", "training")
     donor_signals_testing, bd_signals_testing = load_signals(feat_dir, "donor", "testing")
 
-    # 抽取部分数据用于代码测试
-    p = 2000
-    n = 20000
-    donor_signals_training = donor_signals_training[:p]
-    bd_signals_training = bd_signals_training[:n]
-    donor_signals_testing = donor_signals_testing[:p]
-    bd_signals_testing = bd_signals_testing[:n]
-    """************************************模型构建与训练************************************"""
-    donor_sparse_svm = SVM(up_len, down_len, model_par_dir, "sparse")
-    donor_mm1_svm = SVM(up_len, down_len, model_par_dir, "mm1")
-    donor_mm2_svm = SVM(up_len, down_len, model_par_dir, "mm2")
-    donor_fdtf_svm = SVM(up_len, down_len, model_par_dir, "fdtf")
-
-    donor_svms = [donor_sparse_svm, donor_mm1_svm, donor_mm2_svm, donor_fdtf_svm]
-
-    for svm_model in donor_svms:
-        # # 网格搜索最优超参数
-        # svm_model.tune_hyperparams(donor_signals_training, bd_signals_training)
-
-        # # 模型训练
-        # svm_model.fit(donor_signals_training, bd_signals_training)
-
-        # 模型加载
-        svm_model.load_params()
-
-    """************************************模型测试************************************"""
+    # # 抽取部分数据用于代码测试
+    # p = 2000
+    # n = 20000
+    # donor_signals_training = donor_signals_training[:p]
+    # bd_signals_training = bd_signals_training[:n]
+    # donor_signals_testing = donor_signals_testing[:p]
+    # bd_signals_testing = bd_signals_testing[:n]
+    
     # 测试集信号
     signals_testing = donor_signals_testing + bd_signals_testing
     # 测试集标签
     donor_labels_testing = np.array([1 for _ in range(len(donor_signals_testing))])
     bd_labels_testing = np.array([-1 for _ in range(len(bd_signals_testing))])
     labels_testing = np.hstack((donor_labels_testing, bd_labels_testing))
+    
+    """************************************多种编码方式对比************************************"""
+    # donor_sparse_svm = SVM(dulen, ddlen, model_par_dir, "sparse")
+    # donor_mm1_svm = SVM(dulen, ddlen, model_par_dir, "mm1")
+    # donor_mm2_svm = SVM(dulen, ddlen, model_par_dir, "mm2")
+    # donor_fdtf_svm = SVM(dulen, ddlen, model_par_dir, "fdtf")
+    #
+    # donor_svms = [donor_sparse_svm, donor_mm1_svm, donor_mm2_svm, donor_fdtf_svm]
+    #
+    # for svm_model in donor_svms:
+    #     # # 网格搜索最优超参数
+    #     # svm_model.tune_hyperparams(donor_signals_training, bd_signals_training)
+    #
+    #     # # 模型训练
+    #     svm_model.fit(donor_signals_training, bd_signals_training)
+    #
+    #     # 模型加载
+    #     # svm_model.load_params()
+    #
+    # styles = ['b-', 'r:', 'm--', 'g-.']
+    # # 设置画布
+    # fig1, ax1 = plt.subplots()
+    # ax1.plot([0, 1], [0, 1], 'k--', linewidth=1)
+    # ax1.set_xlabel("FPR")
+    # ax1.set_ylabel("TPR")
+    # ax1.set_title(f"SVM ROC Curve")
+    # axins1 = ax1.inset_axes([0.3, 0.3, 0.3, 0.3])
+    # fig2, ax2 = plt.subplots()
+    # ax2.plot([0, 1], [1, 0], 'k--', linewidth=1)
+    # ax2.set_xlabel("Recall")
+    # ax2.set_ylabel("Precision")
+    # ax2.set_title(f"SVM PR Curve")
+    #
+    # # 测试集预测
+    # for svm_model, style in zip(donor_svms, styles):
+    #     labels_pred = svm_model.predict(signals_testing)
+    #     scores_pred = svm_model.predict_scores(signals_testing)
+    #
+    #     fpr, tpr, thr = metrics.roc_curve(labels_testing, scores_pred)
+    #     precision, recall, thresholds = metrics.precision_recall_curve(labels_testing, scores_pred)
+    #
+    #     # 绘制ROC曲线
+    #     ax1.plot(fpr, tpr, style,
+    #              label=f"{svm_model.encoder_type} (AUC={metrics.auc(fpr, tpr):.3f})", linewidth=1)
+    #     axins1.plot(fpr, tpr, style)
+    #     # 绘制PR曲线
+    #     ax2.plot(recall, precision, style,
+    #              label=f"{svm_model.encoder_type} (AUC={metrics.auc(recall, precision):.3f})", linewidth=1)
+    #
+    #     # print(f"precision={metrics.precision_score(labels_testing, labels_pred):.3f}")
+    #     # print(f"recall={metrics.recall_score(labels_testing, labels_pred):.3f}")
+    #     # print(f"accuracy={svm_model.accuracy_score(signals_testing, labels_testing):.3f}")
+    #     # print(f"f1-score={metrics.f1_score(labels_testing, labels_pred):.3f}")
+    #     # print(classification_report(labels_testing, labels_pred))  # precision/recall/f1-score
+    #
+    # axins1.set_xlim(0, 0.1)
+    # axins1.set_ylim(0.85, 0.95)
+    # mark_inset(ax1, axins1, loc1=3, loc2=1)
+    # ax1.legend(loc="lower right")
+    # ax2.legend(loc="lower left")
+    # fig1.savefig(fig_par_dir + f"tpr-fpr.png", dpi=400, bbox_inches='tight')
+    # fig2.savefig(fig_par_dir + f"precision-recall.png", dpi=400, bbox_inches='tight')
+    # plt.show()
 
-    styles = ['b-', 'r:', 'm--', 'g-.']
-    # 设置画布
+    """************************************基于稀疏编码的模型************************************"""
+    donor_svm = SVM(dulen, ddlen, model_par_dir, "sparse")
+    donor_svm.fit(donor_signals_training, bd_signals_training)
+    print("模型训练完成")
+    # # 模型加载
+    # donor_svm.load_params()
+    # print("模型加载完成")
+
     fig1, ax1 = plt.subplots()
     ax1.plot([0, 1], [0, 1], 'k--', linewidth=1)
     ax1.set_xlabel("FPR")
     ax1.set_ylabel("TPR")
     ax1.set_title(f"SVM ROC Curve")
-    axins1 = ax1.inset_axes([0.3, 0.3, 0.3, 0.3])
     fig2, ax2 = plt.subplots()
     ax2.plot([0, 1], [1, 0], 'k--', linewidth=1)
     ax2.set_xlabel("Recall")
     ax2.set_ylabel("Precision")
     ax2.set_title(f"SVM PR Curve")
 
-    # 测试集预测
-    for svm_model, style in zip(donor_svms, styles):
-        labels_pred = svm_model.predict(signals_testing)
-        scores_pred = svm_model.predict_scores(signals_testing)
+    scores_pred = donor_svm.predict_scores(signals_testing)
+    print("模型打分完成")
+    fpr, tpr, thr = metrics.roc_curve(labels_testing, scores_pred)
+    precision, recall, thresholds = metrics.precision_recall_curve(labels_testing, scores_pred)
 
-        fpr, tpr, thr = metrics.roc_curve(labels_testing, scores_pred)
-        precision, recall, thresholds = metrics.precision_recall_curve(labels_testing, scores_pred)
+    # 绘制ROC曲线
+    ax1.plot(fpr, tpr,
+             label=f"{donor_svm.encoder_type} (AUC={metrics.auc(fpr, tpr):.3f})", linewidth=1)
+    # 绘制PR曲线
+    ax2.plot(recall, precision,
+             label=f"{donor_svm.encoder_type} (AUC={metrics.auc(recall, precision):.3f})", linewidth=1)
 
-        # 绘制ROC曲线
-        ax1.plot(fpr, tpr, style,
-                 label=f"{svm_model.encoder_type} (AUC={metrics.auc(fpr, tpr):.3f})", linewidth=1)
-        axins1.plot(fpr, tpr, style)
-        # 绘制PR曲线
-        ax2.plot(recall, precision, style,
-                 label=f"{svm_model.encoder_type} (AUC={metrics.auc(recall, precision):.3f})", linewidth=1)
-
-        # print(f"precision={metrics.precision_score(labels_testing, labels_pred):.3f}")
-        # print(f"recall={metrics.recall_score(labels_testing, labels_pred):.3f}")
-        # print(f"accuracy={svm_model.accuracy_score(signals_testing, labels_testing):.3f}")
-        # print(f"f1-score={metrics.f1_score(labels_testing, labels_pred):.3f}")
-        # print(classification_report(labels_testing, labels_pred))  # precision/recall/f1-score
-
-    axins1.set_xlim(0, 0.1)
-    axins1.set_ylim(0.85, 0.95)
-    mark_inset(ax1, axins1, loc1=3, loc2=1)
     ax1.legend(loc="lower right")
     ax2.legend(loc="lower left")
-    fig1.savefig(fig_par_dir + f"tpr-fpr.png", dpi=400, bbox_inches='tight')
-    fig2.savefig(fig_par_dir + f"precision-recall.png", dpi=400, bbox_inches='tight')
+    fig1.savefig(fig_par_dir + f"{donor_svm.encoder_type}/tpr-fpr.png", dpi=400, bbox_inches='tight')
+    fig2.savefig(fig_par_dir + f"{donor_svm.encoder_type}/precision-recall.png", dpi=400, bbox_inches='tight')
     plt.show()
 
     """************************************降维分析************************************"""

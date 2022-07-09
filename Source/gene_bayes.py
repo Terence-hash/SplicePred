@@ -6,6 +6,7 @@
 # @Software: PyCharm
 
 import os
+import re
 import sys
 import datetime
 import joblib
@@ -24,12 +25,12 @@ from pgmpy.estimators import PC, HillClimbSearch, MmhcEstimator
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset, \
     inset_axes, zoomed_inset_axes
 import matplotlib.pyplot as plt
-from signals import load_signals
+from signals_processing import load_signals
 
 
 class BN:
 
-    def __init__(self, signal_ulen, signal_dlen, model_par_dir, net_struc):
+    def __init__(self, signal_ulen, signal_dlen, model_par_dir, net_struc="hillclimb"):
         self.bases = {'a': 0, 'c': 1, 'g': 2, 't': 3}
         self.signal_ulen = signal_ulen
         self.signal_dlen = signal_dlen
@@ -52,7 +53,7 @@ class BN:
         elif self.net_struc == "expanded":
             return self.build_expanded_network(signals)
         else:
-            return self.build_adaptive_network(signals)
+            return self.build_hillclimb_network(signals)
 
     def compute_pri_pros(self, pos_signals, neg_signals):
         """
@@ -83,9 +84,9 @@ class BN:
         # plot Bayesian network
         self._plot_networks()
         # save Bayesian network parameters
-        self._save_networks()
+        self._save_params()
 
-    def _save_networks(self):
+    def _save_params(self):
         """
         保存网络参数
         """
@@ -96,7 +97,7 @@ class BN:
         joblib.dump(self.positive_network, _model_dir + "positive_network.pkl")
         joblib.dump(self.negative_network, _model_dir + "negative_network.pkl")
 
-    def load_networks(self):
+    def load_params(self):
         """
         从保存文件中加载网络参数
         """
@@ -374,7 +375,7 @@ class BN:
 
         return BayesianNetwork(net)
 
-    def build_adaptive_network(self, signals):
+    def build_hillclimb_network(self, signals):
         """
         构建最佳贝叶斯网络结构（利用爬山算法进行学习）
         """
@@ -408,7 +409,7 @@ class BN:
                 # post_pros[label] += math.log(pri_pro)
             _scores.append(post_pros["positive"] - post_pros["negative"])
 
-        return _scores
+        return np.array(_scores)
 
     def predict(self, signals, threshold):
         """
@@ -425,15 +426,19 @@ class BN:
 if __name__ == "__main__":
     start = datetime.datetime.now()
 
-    """*********************************************准备*********************************************"""
-    up_len, down_len = 3, 6
+    """*********************************************数据准备*********************************************"""
+    # signals_folder = "u3d6_u12d5"
+    # signals_folder = "u6d9_u15d6"
+    signals_folder = "u9d12_u20d9"
 
-    signals_folder = "u3d6_u12d5"
+    dulen, ddlen, aulen, adlen = [int(num) for num in re.findall("\d+", signals_folder)]
+
     feat_dir = f"../Data_files/feature_data/{signals_folder}/"
     fig_par_dir = f"../Figures/Bayes/{signals_folder}/"
     model_par_dir = f"../Models/Bayes/{signals_folder}/"
 
-    net_strucs = ["naive", "chain", "expanded", "hillclimb"]
+    # net_strucs = ["naive", "chain", "expanded", "hillclimb"]
+    net_strucs = ["naive", "chain", "hillclimb"]
     for net_struc in net_strucs:
         fig_dir = fig_par_dir + f"{net_struc}/"
         model_dir = model_par_dir + f"{net_struc}/"
@@ -444,39 +449,31 @@ if __name__ == "__main__":
     # 加载数据集
     donor_signals_training, bd_signals_training = load_signals(feat_dir, "donor", "training")
     donor_signals_testing, bd_signals_testing = load_signals(feat_dir, "donor", "testing")
-
-    # # 抽取部分数据用于代码测试
-    # p = 2000
-    # n = 20000
-    # donor_signals_training = donor_signals_training[:p]
-    # bd_signals_training = bd_signals_training[:n]
-    # donor_signals_testing = donor_signals_testing[:p]
-    # bd_signals_testing = bd_signals_testing[:n]
-    """************************************贝叶斯网络构建与训练************************************"""
-    donor_naive_network = BN(up_len, down_len, model_par_dir, "naive")
-    donor_chain_network = BN(up_len, down_len, model_par_dir, "chain")
-    donor_expanded_network = BN(up_len, down_len, model_par_dir, "expanded")
-    donor_adaptive_network = BN(up_len, down_len, model_par_dir, "hillclimb")
-
-    donor_networks = [donor_naive_network,
-                      donor_chain_network,
-                      donor_expanded_network,
-                      donor_adaptive_network
-                      ]
-
-    for network in donor_networks:
-        # 网络训练
-        # network.fit(donor_signals_training, bd_signals_training)
-        # 网络加载
-        network.load_networks()
-
-    """************************************贝叶斯网络测试************************************"""
+    
     # 测试集信号
     signals_testing = donor_signals_testing + bd_signals_testing
     # 测试集标签
     donor_labels_testing = np.array([1 for _ in range(len(donor_signals_testing))])
     bd_labels_testing = np.array([0 for _ in range(len(bd_signals_testing))])
     labels_testing = np.hstack((donor_labels_testing, bd_labels_testing))
+    
+    """************************************多种网络结构对比************************************"""
+    donor_naive_network = BN(dulen, ddlen, model_par_dir, "naive")
+    donor_chain_network = BN(dulen, ddlen, model_par_dir, "chain")
+    # donor_expanded_network = BN(dulen, ddlen, model_par_dir, "expanded")
+    donor_hillclimb_network = BN(dulen, ddlen, model_par_dir, "hillclimb")
+
+    donor_networks = [donor_naive_network,
+                      donor_chain_network,
+                      # donor_expanded_network,
+                      donor_hillclimb_network
+                      ]
+
+    for network in donor_networks:
+        # 网络训练
+        network.fit(donor_signals_training, bd_signals_training)
+        # 网络加载
+        # network.load_params()
 
     # # 测试集预测
     # for network in donor_networks:
@@ -547,6 +544,22 @@ if __name__ == "__main__":
     fig1.savefig(fig_par_dir + f"tpr-fpr.png", dpi=400, bbox_inches='tight')
     fig2.savefig(fig_par_dir + f"precision-recall.png", dpi=400, bbox_inches='tight')
     plt.show()
+    
+    """************************************基于结构学习的贝叶斯网络************************************"""
+    # # 计算f1-score最大的阈值
+    # scores_testing = donor_hillclimb_network.predict_scores(signals_testing)
+    # precision, recall, thresholds = metrics.precision_recall_curve(labels_testing, scores_testing)
+    # max_f1score = 0
+    # ulti_thr = 0.5
+    # thrs = np.arange(min(thresholds), max(thresholds), 0.05)
+    # for thr in thrs:
+    #     labels_pred = np.zeros(len(signals_testing), dtype=int)
+    #     labels_pred[scores_testing >= thr] = 1
+    #     f1score = metrics.f1_score(labels_testing, labels_pred)
+    #     if f1score > max_f1score:
+    #         max_f1score = f1score
+    #         ulti_thr = thr
+    # print(max_f1score, ulti_thr)
 
     end = datetime.datetime.now()
     print(f"程序运行时间： {end - start}")
