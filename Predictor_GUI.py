@@ -6,11 +6,7 @@
 # @Software: PyCharm
 
 import sys
-
-from PyQt5 import QtGui
-
 sys.path.append("./Source")
-
 from PyQt5.QtWidgets import (QWidget, QPushButton, QTextEdit, QLineEdit, QFileDialog,
                              QApplication, QMessageBox, QLabel, QGridLayout)
 from PyQt5.QtGui import QIcon, QFont
