@@ -5,9 +5,10 @@
 # @FileName: gene_svm.py
 # @Software: PyCharm
 
+import sys
+sys.path.append("../")
 import os
 import re
-import sys
 import datetime
 import joblib
 import umap
@@ -22,8 +23,8 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset, \
     inset_axes, zoomed_inset_axes
-from signals_processing import load_signals
-from utils import *
+from Source.signals_processing import load_signals
+from Source.func_utils import *
 
 
 class SVM:

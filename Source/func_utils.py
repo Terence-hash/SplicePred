@@ -2,7 +2,7 @@
 # @Time    : 2022/7/10 1:28
 # @Author  : Terence Tan
 # @Email   : 2228254095@qq.com
-# @FileName: utils.py
+# @FileName: func_utils.py
 # @Software: PyCharm
 
 import numpy as np

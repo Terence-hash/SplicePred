@@ -5,9 +5,10 @@
 # @FileName: gene_bayes.py
 # @Software: PyCharm
 
+import sys
+sys.path.append("../")
 import os
 import re
-import sys
 import datetime
 import joblib
 from pprint import pprint
@@ -25,8 +26,8 @@ from pgmpy.estimators import PC, HillClimbSearch, MmhcEstimator
 from mpl_toolkits.axes_grid1.inset_locator import mark_inset, \
     inset_axes, zoomed_inset_axes
 import matplotlib.pyplot as plt
-from signals_processing import load_signals
-from utils import *
+from Source.signals_processing import load_signals
+from Source.func_utils import *
 
 
 class BN:
