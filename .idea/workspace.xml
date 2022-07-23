@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="a9b01b29-fd39-4738-99e7-c73f78206156" name="变更" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Predictor_GUI.py" beforeDir="false" afterPath="$PROJECT_DIR$/Predictor_GUI.py" afterDir="false" />
-    </list>
+    <list default="true" id="a9b01b29-fd39-4738-99e7-c73f78206156" name="变更" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -113,6 +110,7 @@
       <updated>1657531926974</updated>
       <workItem from="1657531931671" duration="3905000" />
       <workItem from="1657537748458" duration="1884000" />
+      <workItem from="1658149430989" duration="60000" />
     </task>
     <servers />
   </component>
